@@ -20,6 +20,10 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      - run: dart pub get
+        working-directory: packages/teen_patti_engine
+      - run: dart pub get
+        working-directory: server
       - run: flutter analyze
       - run: flutter test
       - run: flutter build apk --release
