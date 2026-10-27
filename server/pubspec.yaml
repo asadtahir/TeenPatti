@@ -1,0 +1,16 @@
+name: teen_patti_server
+description: Authoritative real-time Teen Patti server. Reuses the shared engine package.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  crypto: ^3.0.3
+  teen_patti_engine:
+    path: ../packages/teen_patti_engine
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
