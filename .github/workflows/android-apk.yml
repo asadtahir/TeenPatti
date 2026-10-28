@@ -26,6 +26,24 @@ jobs:
         working-directory: server
       - run: flutter analyze
       - run: flutter test
+      - name: Set up release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
+            printf 'storeFile=app/release.jks
+storePassword=%s
+keyAlias=%s
+keyPassword=%s
+'               "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
+            echo "Signing with the release key"
+          else
+            echo "No signing secrets set: falling back to the debug key"
+          fi
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
