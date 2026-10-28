@@ -44,7 +44,7 @@ keyPassword=%s
           else
             echo "No signing secrets set: falling back to the debug key"
           fi
-      - run: flutter build apk --release
+      - run: flutter build apk --release --build-number=${{ github.run_number }}
       - uses: actions/upload-artifact@v4
         with:
           name: teen-patti-apk
