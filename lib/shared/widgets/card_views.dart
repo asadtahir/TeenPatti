@@ -129,7 +129,7 @@ class _BackPainter extends CustomPainter {
           ..strokeWidth = math.max(1, size.width * 0.02));
     final tp = TextPainter(
       text: TextSpan(
-          text: 'TP',
+          text: 'AT',
           style: TextStyle(
               color: AppColors.gold, fontSize: r * 0.95, fontWeight: FontWeight.w900, letterSpacing: 1)),
       textDirection: TextDirection.ltr,

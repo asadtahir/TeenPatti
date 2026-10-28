@@ -1,3 +1,5 @@
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teen_patti_engine/teen_patti_engine.dart';
@@ -21,26 +23,56 @@ enum SoundEffect {
 
 enum MusicTrack { lobby, table, victory }
 
-/// Sound abstraction. The default implementation uses system sounds; swap in an
-/// audio-package implementation once sound assets are added to the project.
+/// Sound abstraction so tests can swap in a silent or recording implementation.
 abstract interface class SoundService {
   void play(SoundEffect effect);
   void playMusic(MusicTrack track);
   void stopMusic();
 }
 
-class SystemSoundService implements SoundService {
+/// Plays the bundled `assets/audio/*.wav` effects. Each effect keeps its own low-latency
+/// player so rapid sounds (chips, deals) can overlap instead of cutting each other off.
+class AudioSoundService implements SoundService {
+  final _players = <SoundEffect, AudioPlayer>{};
+  var _broken = false;
+
+  static const _files = {
+    SoundEffect.cardDeal: 'card_deal.wav',
+    SoundEffect.cardFlip: 'card_flip.wav',
+    SoundEffect.chip: 'chip.wav',
+    SoundEffect.bet: 'bet.wav',
+    SoundEffect.raise: 'raise.wav',
+    SoundEffect.fold: 'fold.wav',
+    SoundEffect.click: 'click.wav',
+    SoundEffect.timerWarning: 'timer_warning.wav',
+    SoundEffect.win: 'win.wav',
+    SoundEffect.lose: 'lose.wav',
+    SoundEffect.roomJoin: 'room_join.wav',
+    SoundEffect.gameStart: 'game_start.wav',
+  };
+
   @override
   void play(SoundEffect effect) {
-    switch (effect) {
-      case SoundEffect.click:
-      case SoundEffect.bet:
-      case SoundEffect.raise:
-      case SoundEffect.chip:
-      case SoundEffect.timerWarning:
-        SystemSound.play(SystemSoundType.click);
-      default:
-        break;
+    if (_broken) return;
+    _play(effect);
+  }
+
+  Future<void> _play(SoundEffect effect) async {
+    try {
+      final player = _players.putIfAbsent(effect, () {
+        final p = AudioPlayer()..setPlayerMode(PlayerMode.lowLatency);
+        p.setAudioContext(
+          AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers)
+              .build(),
+        );
+        return p;
+      });
+      await player.stop();
+      await player.play(AssetSource('audio/${_files[effect]}'));
+    } catch (e) {
+      // No audio backend (tests, unsupported platform): stay silent rather than crash.
+      _broken = true;
+      debugPrint('Sound disabled: $e');
     }
   }
 
@@ -51,7 +83,9 @@ class SystemSoundService implements SoundService {
   void stopMusic() {}
 }
 
-final soundServiceProvider = Provider<SoundService>((ref) => SystemSoundService());
+final soundServiceProvider = Provider<SoundService>(
+  (ref) => AudioSoundService(),
+);
 
 /// Turns engine events into sound + haptics, honouring the user's settings.
 class FeedbackService {
@@ -59,7 +93,9 @@ class FeedbackService {
   final Ref _ref;
 
   void play(SoundEffect e) {
-    if (_ref.read(settingsProvider).sound) _ref.read(soundServiceProvider).play(e);
+    if (_ref.read(settingsProvider).sound) {
+      _ref.read(soundServiceProvider).play(e);
+    }
   }
 
   void haptic(void Function() h) {
@@ -89,7 +125,11 @@ class FeedbackService {
           final raise = e.data['kind'] == 'RAISE';
           play(raise ? SoundEffect.raise : SoundEffect.bet);
           play(SoundEffect.chip);
-          if (e.playerId == me) haptic(raise ? HapticFeedback.mediumImpact : HapticFeedback.lightImpact);
+          if (e.playerId == me) {
+            haptic(
+              raise ? HapticFeedback.mediumImpact : HapticFeedback.lightImpact,
+            );
+          }
         case GameEvent.playerFolded:
           play(SoundEffect.fold);
         case GameEvent.gameEnded:
@@ -101,4 +141,6 @@ class FeedbackService {
   }
 }
 
-final feedbackServiceProvider = Provider<FeedbackService>((ref) => FeedbackService(ref));
+final feedbackServiceProvider = Provider<FeedbackService>(
+  (ref) => FeedbackService(ref),
+);

@@ -5,6 +5,7 @@ import '../../../core/theme/design_tokens.dart';
 import '../../../shared/animations/turn_ring.dart';
 import '../../../shared/widgets/card_views.dart';
 import '../../../shared/widgets/chip_badge.dart';
+import '../../../shared/widgets/player_avatar.dart';
 
 class SeatView extends StatelessWidget {
   const SeatView({
@@ -70,18 +71,13 @@ class SeatView extends StatelessWidget {
       ]),
     );
 
-    final avatar = Container(
-      width: avatarSize,
-      height: avatarSize,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.surfaceHigh,
-        border: Border.all(
-            color: isWinner ? AppColors.gold : Colors.white24, width: isWinner ? 3 : 1.5),
-        boxShadow: isWinner && glow ? AppShadows.glow : null,
-      ),
-      child: Icon(player.isBot ? Icons.smart_toy_outlined : Icons.person,
-          color: isLocal ? AppColors.gold : AppColors.textMuted, size: avatarSize * 0.55),
+    final avatar = PlayerAvatar(
+      seed: player.name,
+      size: avatarSize,
+      highlight: isLocal,
+      border: Border.all(
+          color: isWinner ? AppColors.gold : Colors.white24, width: isWinner ? 3 : 1.5),
+      shadows: isWinner && glow ? AppShadows.glow : null,
     );
 
     Widget avatarWidget = avatar;

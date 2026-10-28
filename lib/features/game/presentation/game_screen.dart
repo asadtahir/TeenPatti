@@ -79,10 +79,30 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   ),
                   child: Row(
                     children: [
-                      IconButton(
-                        tooltip: 'Leave table',
-                        icon: const Icon(Icons.close),
-                        onPressed: _leave,
+                      Tooltip(
+                        message: 'Leave table',
+                        child: Material(
+                          color: AppColors.crimson,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            onTap: _leave,
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              child: Text(
+                                'Exit',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                       const Spacer(),
                       if (conn != ConnectionStatus.connected)

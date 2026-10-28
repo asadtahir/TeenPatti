@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shared/animations/entrance.dart';
 import '../../shared/widgets/screen_scaffold.dart';
+import '../game/presentation/feedback_service.dart';
 import '../online/online_controller.dart';
 import 'settings_controller.dart';
 import 'settings_model.dart';
@@ -15,20 +16,38 @@ class SettingsScreen extends ConsumerWidget {
     final s = ref.watch(settingsProvider);
     final ctrl = ref.read(settingsProvider.notifier);
 
-    Widget toggle(String title, bool value, AppSettings Function(bool) apply) =>
-        SwitchListTile(
-          title: Text(title),
-          value: value,
-          onChanged: (v) => ctrl.update((_) => apply(v)),
-        );
+    Widget toggle(
+      String title,
+      bool value,
+      AppSettings Function(bool) apply, {
+      String? subtitle,
+      IconData? icon,
+    }) => SwitchListTile(
+      secondary: icon == null ? null : Icon(icon),
+      title: Text(title),
+      subtitle: subtitle == null ? null : Text(subtitle),
+      value: value,
+      onChanged: (v) {
+        ctrl.update((_) => apply(v));
+        // Confirm the sound is on by playing a click as it is switched on.
+        if (v && title == 'Sound effects') {
+          ref.read(soundServiceProvider).play(SoundEffect.chip);
+        }
+      },
+    );
 
     return ScreenScaffold(
       title: 'Settings',
       child: ListView(
         children: staggered(
           [
-            toggle('Sound', s.sound, (v) => s.copyWith(sound: v)),
-            toggle('Music', s.music, (v) => s.copyWith(music: v)),
+            toggle(
+              'Sound effects',
+              s.sound,
+              (v) => s.copyWith(sound: v),
+              subtitle: 'Cards, chips, clicks and win / lose jingles',
+              icon: Icons.volume_up_outlined,
+            ),
             toggle('Vibration', s.vibration, (v) => s.copyWith(vibration: v)),
             toggle(
               'Notifications',

@@ -10,6 +10,7 @@ import '../../../core/theme/design_tokens.dart';
 import '../../../shared/animations/ambient.dart';
 import '../../../shared/animations/entrance.dart';
 import '../../../shared/widgets/chip_badge.dart';
+import '../../../shared/widgets/player_avatar.dart';
 import '../../../shared/widgets/premium_button.dart';
 import '../../../shared/widgets/screen_scaffold.dart';
 import '../../game/presentation/game_controller.dart';
@@ -173,11 +174,13 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
                     offset: const Offset(40, 0),
                     curve: Curves.easeOutBack,
                     child: ListTile(
-                      leading: Icon(
-                        p.connected ? Icons.person : Icons.person_off,
-                        color: p.connected
-                            ? AppColors.gold
-                            : AppColors.textMuted,
+                      leading: Opacity(
+                        opacity: p.connected ? 1 : 0.4,
+                        child: PlayerAvatar(
+                          seed: p.name,
+                          size: 40,
+                          highlight: p.id == online.userId,
+                        ),
                       ),
                       title: Text(
                         p.id == online.userId ? '${p.name} (you)' : p.name,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../features/game/presentation/feedback_service.dart';
 import '../animations/ambient.dart';
 
 enum PremiumButtonStyle { primary, secondary }
@@ -125,7 +126,12 @@ class _PremiumButtonState extends ConsumerState<PremiumButton> {
         onTapDown: enabled ? (_) => setState(() => _down = true) : null,
         onTapCancel: () => setState(() => _down = false),
         onTapUp: (_) => setState(() => _down = false),
-        onTap: widget.onPressed,
+        onTap: enabled
+            ? () {
+                ref.read(feedbackServiceProvider).click();
+                widget.onPressed!();
+              }
+            : null,
         child: AnimatedScale(
           scale: _down ? 0.96 : 1,
           duration: AppDurations.fast,

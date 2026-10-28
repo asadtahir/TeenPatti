@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../shared/animations/entrance.dart';
 import '../../../shared/widgets/chip_badge.dart';
+import '../../../shared/widgets/player_avatar.dart';
 import '../../../shared/widgets/premium_button.dart';
 import '../../../shared/widgets/table_background.dart';
 import '../../profile/profile.dart';
@@ -42,10 +43,10 @@ class HomeScreen extends ConsumerWidget {
                               width: 1.5,
                             ),
                           ),
-                          child: const CircleAvatar(
-                            radius: 22,
-                            backgroundColor: AppColors.surfaceHigh,
-                            child: Icon(Icons.person, color: AppColors.gold),
+                          child: PlayerAvatar(
+                            seed: profile.username,
+                            size: 44,
+                            highlight: true,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
