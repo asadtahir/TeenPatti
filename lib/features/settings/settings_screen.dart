@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../shared/animations/entrance.dart';
 import '../../shared/widgets/screen_scaffold.dart';
 import '../online/online_controller.dart';
 import 'settings_controller.dart';
@@ -23,61 +24,95 @@ class SettingsScreen extends ConsumerWidget {
 
     return ScreenScaffold(
       title: 'Settings',
-      child: ListView(children: [
-        toggle('Sound', s.sound, (v) => s.copyWith(sound: v)),
-        toggle('Music', s.music, (v) => s.copyWith(music: v)),
-        toggle('Vibration', s.vibration, (v) => s.copyWith(vibration: v)),
-        toggle('Notifications', s.notifications,
-            (v) => s.copyWith(notifications: v)),
-        toggle('Reduce animations', s.reduceMotion,
-            (v) => s.copyWith(reduceMotion: v)),
-        ListTile(
-          title: const Text('Graphics quality'),
-          trailing: DropdownButton<GraphicsQuality>(
-            value: s.graphicsQuality,
-            underline: const SizedBox.shrink(),
-            items: [
-              for (final q in GraphicsQuality.values)
-                DropdownMenuItem(
-                    value: q,
-                    child: Text(q.name[0].toUpperCase() + q.name.substring(1))),
-            ],
-            onChanged: (q) {
-              if (q != null) ctrl.update((_) => s.copyWith(graphicsQuality: q));
-            },
-          ),
-        ),
-        ListTile(
-          title: const Text('Server address'),
-          subtitle: Text(ref.watch(serverUrlProvider)),
-          trailing: const Icon(Icons.edit, size: 18),
-          onTap: () async {
-            final controller = TextEditingController(text: ref.read(serverUrlProvider));
-            final url = await showDialog<String>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: const Text('Server address'),
-                content: TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.url,
-                  decoration: const InputDecoration(hintText: 'http://192.168.1.10:8080'),
-                ),
-                actions: [
-                  TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-                  TextButton(onPressed: () => Navigator.of(ctx).pop(controller.text), child: const Text('Save')),
+      child: ListView(
+        children: staggered(
+          [
+            toggle('Sound', s.sound, (v) => s.copyWith(sound: v)),
+            toggle('Music', s.music, (v) => s.copyWith(music: v)),
+            toggle('Vibration', s.vibration, (v) => s.copyWith(vibration: v)),
+            toggle(
+              'Notifications',
+              s.notifications,
+              (v) => s.copyWith(notifications: v),
+            ),
+            toggle(
+              'Reduce animations',
+              s.reduceMotion,
+              (v) => s.copyWith(reduceMotion: v),
+            ),
+            ListTile(
+              title: const Text('Graphics quality'),
+              trailing: DropdownButton<GraphicsQuality>(
+                value: s.graphicsQuality,
+                underline: const SizedBox.shrink(),
+                items: [
+                  for (final q in GraphicsQuality.values)
+                    DropdownMenuItem(
+                      value: q,
+                      child: Text(
+                        q.name[0].toUpperCase() + q.name.substring(1),
+                      ),
+                    ),
                 ],
+                onChanged: (q) {
+                  if (q != null) {
+                    ctrl.update((_) => s.copyWith(graphicsQuality: q));
+                  }
+                },
               ),
-            );
-            if (url != null && Uri.tryParse(url.trim())?.hasAuthority == true) {
-              await ref.read(serverUrlProvider.notifier).set(url);
-              await ref.read(onlineProvider.notifier).disconnect();
-            }
-          },
+            ),
+            ListTile(
+              title: const Text('Server address'),
+              subtitle: Text(ref.watch(serverUrlProvider)),
+              trailing: const Icon(Icons.edit, size: 18),
+              onTap: () async {
+                final controller = TextEditingController(
+                  text: ref.read(serverUrlProvider),
+                );
+                final url = await showDialog<String>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Server address'),
+                    content: TextField(
+                      controller: controller,
+                      keyboardType: TextInputType.url,
+                      decoration: const InputDecoration(
+                        hintText: 'http://192.168.1.10:8080',
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(controller.text),
+                        child: const Text('Save'),
+                      ),
+                    ],
+                  ),
+                );
+                if (url != null &&
+                    Uri.tryParse(url.trim())?.hasAuthority == true) {
+                  await ref.read(serverUrlProvider.notifier).set(url);
+                  await ref.read(onlineProvider.notifier).disconnect();
+                }
+              },
+            ),
+            const ListTile(title: Text('Language'), trailing: Text('English')),
+            const ListTile(
+              title: Text('Account'),
+              trailing: Icon(Icons.chevron_right),
+            ),
+            const ListTile(
+              title: Text('Privacy'),
+              trailing: Icon(Icons.chevron_right),
+            ),
+          ],
+          step: const Duration(milliseconds: 45),
+          offset: const Offset(24, 0),
         ),
-        const ListTile(title: Text('Language'), trailing: Text('English')),
-        const ListTile(title: Text('Account'), trailing: Icon(Icons.chevron_right)),
-        const ListTile(title: Text('Privacy'), trailing: Icon(Icons.chevron_right)),
-      ]),
+      ),
     );
   }
 }

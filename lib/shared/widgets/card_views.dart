@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:teen_patti_engine/teen_patti_engine.dart';
 
 import '../../core/theme/design_tokens.dart';
+import 'suit_shapes.dart';
 
 double cardHeightFor(double width) => width / AppCardSize.aspect;
 
@@ -40,15 +41,16 @@ class CardFace extends StatelessWidget {
               Text(card.rank.label,
                   style: TextStyle(
                       color: color, fontSize: width * 0.34, fontWeight: FontWeight.w800, height: 1)),
-              Text(card.suit.symbol,
-                  style: TextStyle(color: color, fontSize: width * 0.28, height: 1)),
+              Padding(
+                padding: EdgeInsets.only(top: width * 0.03),
+                child: SuitGlyph(card.suit, size: width * 0.26, color: color),
+              ),
             ]),
           ),
           Center(
             child: Padding(
               padding: EdgeInsets.only(top: h * 0.12, left: width * 0.1),
-              child: Text(card.suit.symbol,
-                  style: TextStyle(color: color.withValues(alpha: 0.92), fontSize: width * 0.62, height: 1)),
+              child: SuitGlyph(card.suit, size: width * 0.56, color: color.withValues(alpha: 0.92)),
             ),
           ),
         ]),

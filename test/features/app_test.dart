@@ -6,9 +6,14 @@ import 'package:teen_patti/app/app.dart';
 import 'package:teen_patti/core/storage/key_value_store.dart';
 import 'package:teen_patti/features/settings/settings_controller.dart';
 import 'package:teen_patti/features/settings/settings_model.dart';
+import 'package:teen_patti/shared/animations/ambient.dart';
 
 Widget _app(KeyValueStore store) => ProviderScope(
-      overrides: [keyValueStoreProvider.overrideWithValue(store)],
+      // Endless decoration would keep pumpAndSettle from ever settling.
+      overrides: [
+        keyValueStoreProvider.overrideWithValue(store),
+        ambientMotionProvider.overrideWithValue(false),
+      ],
       child: const TeenPattiApp(),
     );
 

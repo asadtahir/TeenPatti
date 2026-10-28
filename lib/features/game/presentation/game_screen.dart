@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/connection_status.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../shared/animations/entrance.dart';
 import '../../../shared/widgets/table_background.dart';
 import '../../offline/offline_setup_screen.dart';
 import 'action_bar.dart';
@@ -30,10 +31,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         final setup = ref.read(offlineSetupProvider);
-        ref.read(gameControllerProvider.notifier).startOffline(
-              players: setup.players,
-              difficulty: setup.difficulty,
-            );
+        ref
+            .read(gameControllerProvider.notifier)
+            .startOffline(players: setup.players, difficulty: setup.difficulty);
       });
     }
   }
@@ -50,7 +50,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       if (f != null && f != prev?.failure) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(f.message), duration: const Duration(seconds: 2)));
+          ..showSnackBar(
+            SnackBar(
+              content: Text(f.message),
+              duration: const Duration(seconds: 2),
+            ),
+          );
         ref.read(gameControllerProvider.notifier).clearFailure();
       }
     });
@@ -64,22 +69,37 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       child: Scaffold(
         body: TableBackground(
           dark: true,
-          child: Column(children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-              child: Row(children: [
-                IconButton(
-                    tooltip: 'Leave table',
-                    icon: const Icon(Icons.close),
-                    onPressed: _leave),
-                const Spacer(),
-                if (conn != ConnectionStatus.connected)
-                  _ConnectionPill(conn),
-              ]),
-            ),
-            const Expanded(child: GameTable()),
-            const ActionBar(),
-          ]),
+          child: Column(
+            children: [
+              Entrance(
+                offset: const Offset(0, -24),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Leave table',
+                        icon: const Icon(Icons.close),
+                        onPressed: _leave,
+                      ),
+                      const Spacer(),
+                      if (conn != ConnectionStatus.connected)
+                        _ConnectionPill(conn),
+                    ],
+                  ),
+                ),
+              ),
+              const Expanded(child: GameTable()),
+              const Entrance(
+                delay: Duration(milliseconds: 450),
+                offset: Offset(0, 70),
+                curve: Curves.easeOutBack,
+                child: ActionBar(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -105,12 +125,27 @@ class _ConnectionPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.pill),
         border: Border.all(color: AppColors.warning),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        const SizedBox(
-            width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warning)),
-        const SizedBox(width: 8),
-        Text(text, style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700)),
-      ]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.warning,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: const TextStyle(
+              color: AppColors.warning,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

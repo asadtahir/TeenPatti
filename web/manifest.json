@@ -1,11 +1,11 @@
 {
-    "name": "teen_patti",
-    "short_name": "teen_patti",
+    "name": "Teen Patti",
+    "short_name": "Teen Patti",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0B5D3B",
+    "theme_color": "#0B5D3B",
+    "description": "Teen Patti card game with AI opponents and online tables.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

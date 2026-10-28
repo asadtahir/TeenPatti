@@ -9,22 +9,37 @@ import 'package:teen_patti/features/game/data/offline_game_repository.dart';
 import 'package:teen_patti/features/game/presentation/table_layout.dart';
 import 'package:teen_patti/features/profile/profile.dart';
 import 'package:teen_patti/features/stats/stats.dart';
+import 'package:teen_patti/shared/animations/ambient.dart';
 import 'package:teen_patti_engine/teen_patti_engine.dart';
 
 void main() {
   group('TableLayout', () {
-    for (final size in const [Size(360, 520), Size(412, 700), Size(820, 900), Size(1280, 640)]) {
-      for (var n = 3; n <= 6; n++) {
-        test('$n seats stay on screen at $size and local is at the bottom', () {
+    // Table areas (below the header, above the action bar) for common devices.
+    const sizes = [
+      Size(320, 460), Size(360, 480), Size(360, 560), Size(412, 700),
+      Size(768, 800), Size(1000, 556), Size(1280, 640), Size(1920, 900),
+    ];
+    for (final size in sizes) {
+      for (var n = 2; n <= 6; n++) {
+        test('$n seats fit inside $size without clipping or overlap', () {
           final l = TableLayout(size);
+          final screen = Offset.zero & size;
+          final rects = [for (var i = 0; i < n; i++) l.seatRect(i, 0, n)];
           for (var i = 0; i < n; i++) {
-            final c = l.seatCenter(i, 0, n);
-            expect(c.dx, inInclusiveRange(0, size.width), reason: 'seat $i x');
-            expect(c.dy, inInclusiveRange(0, size.height), reason: 'seat $i y');
+            expect(screen.contains(rects[i].topLeft), isTrue, reason: 'seat $i top-left ${rects[i]}');
+            expect(screen.contains(rects[i].bottomRight), isTrue, reason: 'seat $i bottom-right ${rects[i]}');
           }
-          final me = l.seatCenter(0, 0, n);
+          // The local seat is the lowest one.
           for (var i = 1; i < n; i++) {
-            expect(me.dy, greaterThanOrEqualTo(l.seatCenter(i, 0, n).dy));
+            expect(rects[0].center.dy, greaterThanOrEqualTo(rects[i].center.dy));
+          }
+          final pot = l.potRect;
+          final deck = l.deckRect;
+          final all = [...rects, pot, deck];
+          for (var i = 0; i < all.length; i++) {
+            for (var j = i + 1; j < all.length; j++) {
+              expect(all[i].overlaps(all[j]), isFalse, reason: 'rect $i ${all[i]} overlaps $j ${all[j]}');
+            }
           }
         });
       }
@@ -108,7 +123,10 @@ void main() {
 
     final store = MemoryStore();
     await tester.pumpWidget(ProviderScope(
-      overrides: [keyValueStoreProvider.overrideWithValue(store)],
+      overrides: [
+        keyValueStoreProvider.overrideWithValue(store),
+        ambientMotionProvider.overrideWithValue(false),
+      ],
       child: const TeenPattiApp(),
     ));
     await tester.pumpAndSettle();

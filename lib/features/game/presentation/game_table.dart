@@ -10,6 +10,7 @@ import '../../../shared/animations/animated_counter.dart';
 import '../../../shared/animations/animation_profile.dart';
 import '../../../shared/animations/confetti_burst.dart';
 import '../../../shared/animations/effects.dart';
+import '../../../shared/animations/entrance.dart';
 import '../../../shared/widgets/card_views.dart';
 import '../../../shared/widgets/chip_badge.dart';
 import '../../../shared/widgets/chip_disc.dart';
@@ -89,27 +90,42 @@ class _GameTableState extends ConsumerState<GameTable> {
             'SIDE_SHOW' => 'SIDE SHOW ${e.amount}',
             _ => blind ? 'BLIND ${e.amount}' : 'CALL ${e.amount}',
           };
-          _effects.add(FloatingTextEffect(
-            at: from + const Offset(0, -20),
-            text: label,
-            color: kind == 'RAISE' ? AppColors.warning : AppColors.gold,
-          ));
-          _effects.add(ChipFlightEffect(
-            from: from,
-            to: layout.potCenter,
-            count: kind == 'RAISE' ? 5 : 3,
-            duration: p.d(const Duration(milliseconds: 520)),
-          ));
+          _effects.add(
+            FloatingTextEffect(
+              at: from + const Offset(0, -20),
+              text: label,
+              color: kind == 'RAISE' ? AppColors.warning : AppColors.gold,
+            ),
+          );
+          _effects.add(
+            ChipFlightEffect(
+              from: from,
+              to: layout.potCenter,
+              count: kind == 'RAISE' ? 5 : 3,
+              duration: p.d(const Duration(milliseconds: 520)),
+            ),
+          );
         case GameEvent.playerFolded:
           final at = _seat(g, e.playerId!);
           if (at != null) {
-            _effects.add(FloatingTextEffect(at: at + const Offset(0, -20), text: 'PACK', color: AppColors.textMuted));
+            _effects.add(
+              FloatingTextEffect(
+                at: at + const Offset(0, -20),
+                text: 'PACK',
+                color: AppColors.textMuted,
+              ),
+            );
           }
         case GameEvent.playerSeen:
           final at = _seat(g, e.playerId!);
           if (at != null && e.playerId != ui.localPlayerId) {
-            _effects.add(FloatingTextEffect(
-                at: at + const Offset(0, -20), text: 'SEEN', color: AppColors.success));
+            _effects.add(
+              FloatingTextEffect(
+                at: at + const Offset(0, -20),
+                text: 'SEEN',
+                color: AppColors.success,
+              ),
+            );
           }
         case GameEvent.gameEnded:
           _onGameEnded(g, e);
@@ -132,23 +148,25 @@ class _GameTableState extends ConsumerState<GameTable> {
       final to = _seat(g, id);
       if (to == null) continue;
       final isLast = j == order.length - 1;
-      _effects.add(FlyingCardEffect(
-        from: layout.deckCenter,
-        to: to,
-        cardWidth: layout.otherCardWidth,
-        spin: (_rng.nextDouble() - 0.5) * 0.8,
-        delay: stagger * j,
-        duration: p.d(AppDurations.cardDeal),
-        onDone: () {
-          if (!mounted) return;
-          setState(() {
-            final d = _dealt;
-            if (d == null) return;
-            d[id] = (d[id] ?? 0) + 1;
-            if (isLast) _dealt = null;
-          });
-        },
-      ));
+      _effects.add(
+        FlyingCardEffect(
+          from: layout.deckCenter,
+          to: to,
+          cardWidth: layout.otherCardWidth,
+          spin: (_rng.nextDouble() - 0.5) * 0.8,
+          delay: stagger * j,
+          duration: p.d(AppDurations.cardDeal),
+          onDone: () {
+            if (!mounted) return;
+            setState(() {
+              final d = _dealt;
+              if (d == null) return;
+              d[id] = (d[id] ?? 0) + 1;
+              if (isLast) _dealt = null;
+            });
+          },
+        ),
+      );
     }
   }
 
@@ -164,20 +182,24 @@ class _GameTableState extends ConsumerState<GameTable> {
     for (final w in winners) {
       final to = _seat(g, w);
       if (to == null) continue;
-      _effects.add(ChipFlightEffect(
-        from: layout.potCenter,
-        to: to,
-        count: 8,
-        chipSize: 24,
-        delay: lead,
-        duration: p.d(const Duration(milliseconds: 800)),
-      ));
-      _effects.add(FloatingTextEffect(
-        at: to + const Offset(0, -30),
-        text: '+${formatChips(payouts[w] ?? 0)}',
-        color: AppColors.success,
-        delay: lead,
-      ));
+      _effects.add(
+        ChipFlightEffect(
+          from: layout.potCenter,
+          to: to,
+          count: 8,
+          chipSize: 24,
+          delay: lead,
+          duration: p.d(const Duration(milliseconds: 800)),
+        ),
+      );
+      _effects.add(
+        FloatingTextEffect(
+          at: to + const Offset(0, -30),
+          text: '+${formatChips(payouts[w] ?? 0)}',
+          color: AppColors.success,
+          delay: lead,
+        ),
+      );
     }
     final iWon = winners.contains(ui.localPlayerId);
     setState(() {
@@ -199,35 +221,60 @@ class _GameTableState extends ConsumerState<GameTable> {
     final profile = ref.watch(animationProfileProvider);
     final g = ui.game;
     if (g == null) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.gold),
+      );
     }
 
-    return LayoutBuilder(builder: (context, constraints) {
-      final layout = TableLayout(constraints.biggest);
-      _layout = layout;
-      final local = g.indexOf(ui.localPlayerId);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final layout = TableLayout(constraints.biggest);
+        _layout = layout;
+        final local = g.indexOf(ui.localPlayerId);
 
-      return Stack(clipBehavior: Clip.none, children: [
-        Positioned.fill(child: _Felt(layout: layout)),
-        _deck(layout),
-        _pot(layout, g),
-        for (var i = 0; i < g.players.length; i++) _seatAt(g, ui, layout, i, local, profile),
-        Positioned.fill(child: EffectsLayer(controller: _effects)),
-        if (_celebrate && profile.particles > 0)
-          Positioned.fill(child: ConfettiBurst(key: ValueKey(_celebrateSeed), count: profile.particles, seed: _celebrateSeed)),
-        if (g.isFinished && _showResult)
-          Positioned.fill(
-            child: ResultOverlay(
-              game: g,
-              localId: ui.localPlayerId,
-              // Online, only the host starts the next hand.
-              onNext: ui.isOnline && !ref.watch(onlineProvider.select((s) => s.isHost))
-                  ? null
-                  : () => ref.read(gameControllerProvider.notifier).nextHand(),
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: Entrance(
+                offset: Offset.zero,
+                scaleFrom: 0.88,
+                duration: const Duration(milliseconds: 700),
+                child: _Felt(layout: layout),
+              ),
             ),
-          ),
-      ]);
-    });
+            _deck(layout),
+            _pot(layout, g),
+            for (var i = 0; i < g.players.length; i++)
+              _seatAt(g, ui, layout, i, local, profile),
+            Positioned.fill(child: EffectsLayer(controller: _effects)),
+            if (_celebrate && profile.particles > 0)
+              Positioned.fill(
+                child: ConfettiBurst(
+                  key: ValueKey(_celebrateSeed),
+                  count: profile.particles,
+                  seed: _celebrateSeed,
+                ),
+              ),
+            if (g.isFinished && _showResult)
+              Positioned.fill(
+                child: ResultOverlay(
+                  game: g,
+                  localId: ui.localPlayerId,
+                  // Online, only the host starts the next hand.
+                  onNext:
+                      ui.isOnline &&
+                          !ref.watch(onlineProvider.select((s) => s.isHost))
+                      ? null
+                      : () => ref
+                            .read(gameControllerProvider.notifier)
+                            .nextHand(),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _deck(TableLayout layout) {
@@ -235,69 +282,149 @@ class _GameTableState extends ConsumerState<GameTable> {
     return Positioned(
       left: layout.deckCenter.dx - w / 2,
       top: layout.deckCenter.dy - cardHeightFor(w) / 2,
-      child: Stack(children: [
-        for (var i = 3; i >= 0; i--)
-          Transform.translate(offset: Offset(i * 1.2, -i * 1.2), child: CardBack(width: w)),
-      ]),
+      child: Entrance(
+        delay: const Duration(milliseconds: 350),
+        offset: Offset.zero,
+        scaleFrom: 0.5,
+        curve: Curves.easeOutBack,
+        child: Stack(
+          children: [
+            for (var i = 3; i >= 0; i--)
+              Transform.translate(
+                offset: Offset(i * 1.2, -i * 1.2),
+                child: CardBack(width: w),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _pot(TableLayout layout, GameState g) {
     return Positioned(
-      left: layout.potCenter.dx - 70,
-      top: layout.potCenter.dy - 44,
-      width: 140,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        ChipStack(amount: g.pot),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(AppRadius.pill)),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Text('POT ', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
-              AnimatedCounter(
-                value: g.pot,
-                duration: _profile.d(const Duration(milliseconds: 450)),
-                style: const TextStyle(color: AppColors.gold, fontSize: 16, fontWeight: FontWeight.w900),
-              ),
-            ]),
+      left: layout.potCenter.dx - TableLayout.potBase.width / 2,
+      top: layout.potCenter.dy - TableLayout.potBase.height / 2,
+      width: TableLayout.potBase.width,
+      height: TableLayout.potBase.height,
+      child: Entrance(
+        delay: const Duration(milliseconds: 450),
+        offset: Offset.zero,
+        scaleFrom: 0.6,
+        curve: Curves.easeOutBack,
+        child: Transform.scale(
+          scale: layout.potScale,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ChipStack(amount: g.pot),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'POT ',
+                          style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        AnimatedCounter(
+                          value: g.pot,
+                          duration: _profile.d(
+                            const Duration(milliseconds: 450),
+                          ),
+                          style: const TextStyle(
+                            color: AppColors.gold,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Stake ${formatChips(g.stake)}',
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 2),
-        Text('Stake ${formatChips(g.stake)}',
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
-      ]),
+      ),
     );
   }
 
-  Widget _seatAt(GameState g, GameUiState ui, TableLayout layout, int i, int local, AnimationProfile profile) {
+  Widget _seatAt(
+    GameState g,
+    GameUiState ui,
+    TableLayout layout,
+    int i,
+    int local,
+    AnimationProfile profile,
+  ) {
     final p = g.players[i];
     final isLocal = p.id == ui.localPlayerId;
     final c = layout.seatCenter(i, local, g.players.length);
-    final turn = !g.isFinished && g.pendingSideShow == null && g.currentIndex == i;
+    final turn =
+        !g.isFinished && g.pendingSideShow == null && g.currentIndex == i;
     final deadline = ui.deadline;
-    final remaining = turn && deadline != null ? deadline.difference(DateTime.now()) : null;
+    final remaining = turn && deadline != null
+        ? deadline.difference(DateTime.now())
+        : null;
 
     return Positioned(
       left: c.dx,
       top: c.dy,
       child: FractionalTranslation(
         translation: const Offset(-0.5, -0.5),
-        child: SeatView(
-          player: p,
-          isLocal: isLocal,
-          isTurn: turn,
-          isDealer: i == g.dealerIndex,
-          isWinner: g.isFinished && g.winnerIds.contains(p.id),
-          avatarSize: layout.avatarSize,
-          cardWidth: isLocal ? layout.myCardWidth : layout.otherCardWidth,
-          visibleCards: _dealt?[p.id] ?? 3,
-          flipDuration: profile.d(AppDurations.cardFlip),
-          turnRemaining: remaining == null || remaining.isNegative ? null : remaining,
-          turnTotal: Duration(seconds: g.settings.turnSeconds),
-          onWarningTick: (_) => ref.read(feedbackServiceProvider).timerWarning(),
-          glow: profile.glow,
+        child: Entrance(
+          // Seats pop in one after another, starting with the local player.
+          delay: Duration(
+            milliseconds: 250 + 90 * ((i - local) % g.players.length),
+          ),
+          offset: Offset.zero,
+          scaleFrom: 0.5,
+          curve: Curves.easeOutBack,
+          child: Transform.scale(
+            scale: layout.unit,
+            child: SeatView(
+              player: p,
+              isLocal: isLocal,
+              isTurn: turn,
+              isDealer: i == g.dealerIndex,
+              isWinner: g.isFinished && g.winnerIds.contains(p.id),
+              avatarSize: SeatMetrics.avatar,
+              cardWidth: isLocal
+                  ? SeatMetrics.localCard
+                  : SeatMetrics.otherCard,
+              visibleCards: _dealt?[p.id] ?? 3,
+              flipDuration: profile.d(AppDurations.cardFlip),
+              turnRemaining: remaining == null || remaining.isNegative
+                  ? null
+                  : remaining,
+              turnTotal: Duration(seconds: g.settings.turnSeconds),
+              onWarningTick: (_) =>
+                  ref.read(feedbackServiceProvider).timerWarning(),
+              glow: profile.glow,
+            ),
+          ),
         ),
       ),
     );
@@ -310,9 +437,7 @@ class _Felt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: CustomPaint(painter: _FeltPainter(layout)),
-    );
+    return RepaintBoundary(child: CustomPaint(painter: _FeltPainter(layout)));
   }
 }
 
@@ -323,35 +448,49 @@ class _FeltPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Rect.fromCenter(
-        center: layout.center, width: layout.radiusX * 2.1, height: layout.radiusY * 2.2);
-    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(rect.shortestSide * 0.5));
+      center: layout.center,
+      width: layout.feltRadiusX * 2,
+      height: layout.feltRadiusY * 2,
+    );
+    final rrect = RRect.fromRectAndRadius(
+      rect,
+      Radius.circular(rect.shortestSide * 0.5),
+    );
 
-    canvas.drawRRect(rrect.shift(const Offset(0, 10)), Paint()..color = Colors.black54..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18));
+    canvas.drawRRect(
+      rrect.shift(const Offset(0, 10)),
+      Paint()
+        ..color = Colors.black54
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+    );
     // Wood rail.
     canvas.drawRRect(
-        rrect.inflate(12),
-        Paint()
-          ..shader = const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF6B4423), Color(0xFF3A2312)],
-          ).createShader(rect.inflate(12)));
+      rrect.inflate(12),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF6B4423), Color(0xFF3A2312)],
+        ).createShader(rect.inflate(12)),
+    );
     // Felt with a soft spotlight.
     canvas.drawRRect(
-        rrect,
-        Paint()
-          ..shader = const RadialGradient(
-            center: Alignment(0, -0.2),
-            radius: 0.95,
-            colors: [AppColors.feltLight, AppColors.felt, AppColors.feltDark],
-            stops: [0, 0.55, 1],
-          ).createShader(rect));
+      rrect,
+      Paint()
+        ..shader = const RadialGradient(
+          center: Alignment(0, -0.2),
+          radius: 0.95,
+          colors: [AppColors.feltLight, AppColors.felt, AppColors.feltDark],
+          stops: [0, 0.55, 1],
+        ).createShader(rect),
+    );
     canvas.drawRRect(
-        rrect.deflate(14),
-        Paint()
-          ..color = AppColors.gold.withValues(alpha: 0.35)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5);
+      rrect.deflate(14),
+      Paint()
+        ..color = AppColors.gold.withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
   }
 
   @override

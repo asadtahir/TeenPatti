@@ -1,34 +1,99 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
-/// Pure geometry for the table; everything derives from the available size so it
-/// scales across phones, tablets and desktop windows.
+/// Natural (unscaled) dimensions of a seat. The table scales every seat by
+/// [TableLayout.unit], so these are the single source of truth for what fits where.
+abstract final class SeatMetrics {
+  static const avatar = 48.0;
+  static const otherCard = 30.0;
+  static const localCard = 58.0;
+
+  /// Bounding box of an opponent seat: fanned cards, avatar with turn ring, name pill, status.
+  static const other = Size(96, 176);
+
+  /// Bounding box of the local seat (bigger cards and a "YOUR TURN" label).
+  static const local = Size(134, 232);
+}
+
+/// Pure geometry for the table. Seats are placed on an ellipse that is derived from the
+/// seat sizes themselves, so no seat can leave the screen or overlap its neighbours.
 class TableLayout {
   TableLayout(this.size);
-  final Size size;
 
-  Offset get center => Offset(size.width / 2, size.height * 0.44);
-  double get radiusX => size.width * 0.40;
-  double get radiusY => size.height * 0.30;
+  final Size size;
+  static const margin = 4.0;
+
+  /// Uniform scale applied to every seat. Limited by whichever axis is tighter.
+  late final double unit = math.max(
+    0.3,
+    math.min(math.min(size.width / 370, size.height / 650), 1.6),
+  );
+
+  Size get otherSize => SeatMetrics.other * unit;
+  Size get localSize => SeatMetrics.local * unit;
+
+  double get _ringX =>
+      math.max(0.0, size.width / 2 - otherSize.width / 2 - margin);
+  double get _ringY => math.max(
+    0.0,
+    (size.height - localSize.height / 2 - otherSize.height / 2 - 2 * margin) /
+        2,
+  );
+
+  /// Centre of the seat ellipse (and of the felt, pot and deck).
+  Offset get center => Offset(
+    size.width / 2,
+    (size.height + otherSize.height / 2 - localSize.height / 2) / 2,
+  );
+
+  /// Felt is a little smaller than the seat ring so seats sit on its rail.
+  double get feltRadiusX => _ringX * 0.8;
+  double get feltRadiusY => _ringY * 0.84;
 
   Offset get potCenter => center;
-  Offset get deckCenter => Offset(center.dx - radiusX * 0.62, center.dy - radiusY * 0.1);
+
+  /// Natural size of the pot widget; it is scaled by [potScale] about its centre.
+  static const potBase = Size(120, 98);
+  double get potScale => unit.clamp(0.6, 1.3);
+  Rect get potRect => Rect.fromCenter(
+    center: center,
+    width: potBase.width * potScale,
+    height: potBase.height * potScale,
+  );
+
+  double get otherCardWidth => SeatMetrics.otherCard * unit;
+
+  /// The deck sits just above the pot.
+  Rect get deckRect {
+    final w = otherCardWidth + 6;
+    final h = w / 0.714 + 6;
+    return Rect.fromCenter(
+      center: Offset(center.dx, potRect.top - h / 2 - 4),
+      width: w,
+      height: h,
+    );
+  }
+
+  Offset get deckCenter => deckRect.center;
 
   /// Seat centre for [index] relative to [localIndex]; the local player sits at the bottom
   /// and the rest follow clockwise.
   Offset seatCenter(int index, int localIndex, int count) {
     final k = (index - localIndex) % count;
     final angle = math.pi / 2 + 2 * math.pi * k / count;
-    final dy = center.dy + radiusY * 1.12 * math.sin(angle);
     return Offset(
-      center.dx + radiusX * 1.12 * math.cos(angle),
-      // Keep whole seats (cards + avatar + labels) on screen.
-      dy.clamp(math.min(70.0, size.height / 2), math.max(size.height - 100, size.height / 2)),
+      center.dx + _ringX * math.cos(angle),
+      center.dy + _ringY * math.sin(angle),
     );
   }
 
-  /// Seat sizing scales with the shortest side so cards never overflow.
-  double get avatarSize => (size.shortestSide * 0.13).clamp(40.0, 76.0);
-  double get otherCardWidth => (size.shortestSide * 0.075).clamp(22.0, 44.0);
-  double get myCardWidth => (size.shortestSide * 0.16).clamp(50.0, 96.0);
+  /// On-screen rectangle occupied by the seat at [index].
+  Rect seatRect(int index, int localIndex, int count) {
+    final isLocal = index == localIndex;
+    return Rect.fromCenter(
+      center: seatCenter(index, localIndex, count),
+      width: (isLocal ? localSize : otherSize).width,
+      height: (isLocal ? localSize : otherSize).height,
+    );
+  }
 }
