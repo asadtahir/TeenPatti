@@ -7,6 +7,7 @@ import '../features/home/presentation/home_screen.dart';
 import '../features/lobby/presentation/lobby_screen.dart';
 import '../features/offline/offline_setup_screen.dart';
 import '../features/room/presentation/room_screen.dart';
+import '../features/rules/rules_screen.dart';
 import '../features/settings/settings_screen.dart';
 
 enum _Motion {
@@ -100,6 +101,10 @@ GoRouter buildRouter() => GoRouter(
       path: '/online-game',
       pageBuilder: (c, s) =>
           _page(s, const GameScreen(offline: false), _Motion.zoom),
+    ),
+    GoRoute(
+      path: '/rules',
+      pageBuilder: (c, s) => _page(s, const RulesScreen()),
     ),
     GoRoute(
       path: '/settings',

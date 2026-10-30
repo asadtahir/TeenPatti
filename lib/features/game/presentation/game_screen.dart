@@ -12,6 +12,7 @@ import '../../offline/offline_setup_screen.dart';
 import 'action_bar.dart';
 import 'game_controller.dart';
 import 'game_table.dart';
+import 'table_icon_buttons.dart';
 
 /// Hosts the table. In offline mode it starts the game from the setup screen's choices.
 class GameScreen extends ConsumerStatefulWidget {
@@ -105,8 +106,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         ),
                       ),
                       const Spacer(),
-                      if (conn != ConnectionStatus.connected)
+                      if (conn != ConnectionStatus.connected) ...[
                         _ConnectionPill(conn),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
+                      const RulesButton(),
+                      const SizedBox(width: AppSpacing.sm),
+                      const SoundToggleButton(),
                     ],
                   ),
                 ),

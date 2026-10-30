@@ -139,7 +139,24 @@ class HomeScreen extends ConsumerWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.sm),
+                  Entrance(
+                    delay: const Duration(milliseconds: 1400),
+                    child: TextButton.icon(
+                      onPressed: () => context.push('/rules'),
+                      icon: const Icon(Icons.menu_book_outlined, size: 18),
+                      label: const Text('HOW TO PLAY  ·  RULES'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.gold,
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
                   Entrance(
                     delay: const Duration(milliseconds: 1500),
                     child: const Text(

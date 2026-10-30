@@ -59,6 +59,21 @@ void main() {
     expect(find.text('6 Players'), findsOneWidget);
   });
 
+  testWidgets('rules open from home and the back button returns', (tester) async {
+    tester.view.physicalSize = const Size(900, 1600);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(MemoryStore()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('HOW TO PLAY'));
+    await tester.pumpAndSettle();
+    expect(find.text('How to Play'), findsOneWidget);
+    expect(find.text('Goal'), findsOneWidget);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(find.text('PLAY'), findsOneWidget);
+  });
+
   testWidgets('settings toggle updates state', (tester) async {
     final store = MemoryStore();
     await tester.pumpWidget(_app(store));

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../shared/animations/entrance.dart';
 import '../../shared/widgets/screen_scaffold.dart';
@@ -117,6 +118,13 @@ class SettingsScreen extends ConsumerWidget {
                   await ref.read(onlineProvider.notifier).disconnect();
                 }
               },
+            ),
+            ListTile(
+              leading: const Icon(Icons.menu_book_outlined),
+              title: const Text('How to play'),
+              subtitle: const Text('Rules and hand rankings'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/rules'),
             ),
             const ListTile(title: Text('Language'), trailing: Text('English')),
             const ListTile(

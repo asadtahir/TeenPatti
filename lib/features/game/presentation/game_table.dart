@@ -14,6 +14,7 @@ import '../../../shared/animations/entrance.dart';
 import '../../../shared/widgets/card_views.dart';
 import '../../../shared/widgets/chip_badge.dart';
 import '../../../shared/widgets/chip_disc.dart';
+import '../../../shared/widgets/suit_shapes.dart';
 import '../../online/online_controller.dart';
 import 'feedback_service.dart';
 import 'game_controller.dart';
@@ -445,6 +446,9 @@ class _FeltPainter extends CustomPainter {
   _FeltPainter(this.layout);
   final TableLayout layout;
 
+  static const _brass = Color(0xFFD9A93F);
+  static const _brassLight = Color(0xFFF6DC8C);
+
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Rect.fromCenter(
@@ -452,42 +456,182 @@ class _FeltPainter extends CustomPainter {
       width: layout.feltRadiusX * 2,
       height: layout.feltRadiusY * 2,
     );
-    final rrect = RRect.fromRectAndRadius(
-      rect,
-      Radius.circular(rect.shortestSide * 0.5),
+    RRect stadium(double inflate) {
+      final r = rect.inflate(inflate);
+      return RRect.fromRectAndRadius(r, Radius.circular(r.shortestSide * 0.5));
+    }
+
+    final felt = stadium(0);
+    final rail = stadium(18);
+    final unit = layout.unit;
+
+    // Soft drop shadow so the table floats above the room.
+    canvas.drawRRect(
+      rail.shift(Offset(0, 14 * unit)),
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.65)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 22 * unit),
     );
 
+    // Polished wood rail: warm gradient, grain lines and a lit top edge.
     canvas.drawRRect(
-      rrect.shift(const Offset(0, 10)),
-      Paint()
-        ..color = Colors.black54
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
-    );
-    // Wood rail.
-    canvas.drawRRect(
-      rrect.inflate(12),
+      rail,
       Paint()
         ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF6B4423), Color(0xFF3A2312)],
-        ).createShader(rect.inflate(12)),
+          colors: [Color(0xFF8A5A2E), Color(0xFF5A3719), Color(0xFF2E1A0B)],
+          stops: [0, 0.5, 1],
+        ).createShader(rail.outerRect),
     );
-    // Felt with a soft spotlight.
+    canvas.save();
+    canvas.clipPath(
+      Path.combine(
+        PathOperation.difference,
+        Path()..addRRect(rail),
+        Path()..addRRect(felt),
+      ),
+    );
+    final grain = Paint()
+      ..color = Colors.black.withValues(alpha: 0.10)
+      ..strokeWidth = 1;
+    final lightGrain = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05)
+      ..strokeWidth = 1;
+    for (double y = rail.top; y < rail.bottom; y += 5) {
+      final wobble = math.sin(y * 0.15) * 3;
+      canvas.drawLine(
+        Offset(rail.left, y + wobble),
+        Offset(rail.right, y - wobble),
+        ((y ~/ 5) % 3 == 0) ? lightGrain : grain,
+      );
+    }
+    canvas.restore();
+    // Bevel: light on the outer top edge, dark on the bottom.
     canvas.drawRRect(
-      rrect,
+      rail.deflate(1),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withValues(alpha: 0.45),
+            Colors.transparent,
+            Colors.black.withValues(alpha: 0.5),
+          ],
+        ).createShader(rail.outerRect),
+    );
+
+    // Brass studs set into the rail.
+    final studPath = Path()..addRRect(stadium(9));
+    final studPaint = Paint()..color = _brass;
+    final studShine = Paint()..color = _brassLight;
+    for (final m in studPath.computeMetrics()) {
+      final spacing = 30 * unit;
+      final count = math.max(8, (m.length / spacing).round());
+      for (var i = 0; i < count; i++) {
+        final t = m.getTangentForOffset(m.length * i / count);
+        if (t == null) continue;
+        canvas.drawCircle(t.position, 2.6 * unit + 0.6, studPaint);
+        canvas.drawCircle(
+          t.position.translate(-0.7, -0.7),
+          1.1 * unit + 0.3,
+          studShine,
+        );
+      }
+    }
+
+    // Padded cushion between the rail and the felt.
+    canvas.drawRRect(
+      stadium(3),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 7
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1F3B2C), Color(0xFF0B1A12)],
+        ).createShader(rail.outerRect),
+    );
+
+    // Felt: spotlight from above, then a dark vignette toward the edges.
+    canvas.drawRRect(
+      felt,
       Paint()
         ..shader = const RadialGradient(
-          center: Alignment(0, -0.2),
+          center: Alignment(0, -0.25),
           radius: 0.95,
           colors: [AppColors.feltLight, AppColors.felt, AppColors.feltDark],
           stops: [0, 0.55, 1],
         ).createShader(rect),
     );
+    canvas.save();
+    canvas.clipRRect(felt);
+    // Fine woven texture.
+    final weave = Paint()
+      ..color = Colors.white.withValues(alpha: 0.025)
+      ..strokeWidth = 1;
+    final step = 7.0;
+    for (double d = -rect.height; d < rect.width + rect.height; d += step) {
+      canvas.drawLine(
+        Offset(rect.left + d, rect.top),
+        Offset(rect.left + d + rect.height, rect.bottom),
+        weave,
+      );
+    }
+    // Faint card-suit emblem in the middle of the table.
+    final c = layout.center;
+    final emblem = math.min(rect.width, rect.height) * 0.16;
+    final emblemColor = Colors.white.withValues(alpha: 0.07);
+    final spread = rect.width * 0.27;
+    for (final (i, suit) in Suit.values.indexed) {
+      final dx = (i - 1.5) * (spread / 1.5) * 0.9;
+      canvas.save();
+      canvas.translate(c.dx + dx, c.dy);
+      paintSuit(canvas, suit, emblem * (i.isEven ? 1 : 0.85), emblemColor);
+      canvas.restore();
+    }
     canvas.drawRRect(
-      rrect.deflate(14),
+      felt,
       Paint()
-        ..color = AppColors.gold.withValues(alpha: 0.35)
+        ..shader = RadialGradient(
+          center: const Alignment(0, -0.1),
+          radius: 1.0,
+          colors: [
+            Colors.transparent,
+            Colors.transparent,
+            Colors.black.withValues(alpha: 0.38),
+          ],
+          stops: const [0, 0.62, 1],
+        ).createShader(rect),
+    );
+    canvas.restore();
+
+    // Double gold inlay on the felt.
+    for (final (inset, alpha, w) in const [
+      (13.0, 0.55, 1.6),
+      (18.0, 0.25, 1.0),
+    ]) {
+      canvas.drawRRect(
+        felt.deflate(inset),
+        Paint()
+          ..color = _brass.withValues(alpha: alpha)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = w,
+      );
+    }
+    // Pot circle where the chips land.
+    final pot = layout.potCenter;
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: pot,
+        width: 150 * layout.potScale,
+        height: 118 * layout.potScale,
+      ),
+      Paint()
+        ..color = _brass.withValues(alpha: 0.28)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
